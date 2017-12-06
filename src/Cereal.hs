@@ -1,4 +1,13 @@
-module Cereal where
+module Cereal
+    ( JValue(..)
+    , getString
+    , getInt
+    , getDouble
+    , getBool
+    , getObject
+    , getArray
+    , isNull
+    ) where
 
 data JValue = JString String
             | JNumber Double
