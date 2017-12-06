@@ -4,4 +4,4 @@ import           Cereal
 
 main :: IO ()
 main = do
-  putStrLn "I\'m working on it."
+  print $ JObject [("good", JNumber 1), ("job", JBool False)]
