@@ -1,0 +1,7 @@
+*.hi
+*.o
+*.swp
+*.tag
+*~
+.stack-work/
+.DS_Store
