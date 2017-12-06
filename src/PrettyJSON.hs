@@ -23,6 +23,9 @@ text s = undefined
 double :: Double -> Doc
 double n = undefined
 
+fsep :: [Doc] -> Doc
+fsep xs = undefined
+
 string :: String -> Doc
 string = enclose '"' '"' . hcat . map oneChar
 
@@ -55,6 +58,20 @@ astral n = smallHex (a + 0xd800) <> smallHex (b + 0xdc00)
     a = (n `shiftR` 10) .&. 0x3ff
     b = n .&. 0x3ff
 
+hexEscape :: Char -> Doc
+hexEscape c | d < 0x10000 = smallHex d
+            | otherwise   = astral (d - 0x10000)
+  where
+    d = ord c
+
+series :: Char -> Char -> (a -> Doc) -> [a] -> Doc
+series open close x = enclose open close . fsep . punctuate (char ',') . map x
+
+punctuate :: Doc -> [Doc] -> [Doc]
+punctuate p []     = []
+punctuate p [d]    = [d]
+punctuate p (d:ds) = (d <> p) : punctuate p ds
+
 renderJValue :: JValue -> Doc
 renderJValue (JBool True)  = text "true"
 renderJValue (JBool False) = text "false"
@@ -70,9 +87,6 @@ renderJValue (JArray a) = "[" ++ values a ++ "]"
   where
     values [] = ""
     values vs = intercalate ", " (map renderJValue vs)
-
-series :: Char -> Char -> (a -> Doc) -> [a] -> Doc
-series open close x = enclose open close . fsep . punctuate (char ',') . map x
 
 putJValue :: JValue -> IO ()
 putJValue v = putStrLn (renderJValue v)
