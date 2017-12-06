@@ -71,5 +71,8 @@ renderJValue (JArray a) = "[" ++ values a ++ "]"
     values [] = ""
     values vs = intercalate ", " (map renderJValue vs)
 
+series :: Char -> Char -> (a -> Doc) -> [a] -> Doc
+series open close x = enclose open close . fsep . punctuate (char ',') . map x
+
 putJValue :: JValue -> IO ()
 putJValue v = putStrLn (renderJValue v)
