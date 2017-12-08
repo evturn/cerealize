@@ -1,4 +1,7 @@
-module PrettyJSON (renderJValue) where
+module PrettyJSON
+    ( JValue(..)
+    , renderJValue
+    ) where
 
 import           Cereal    (Doc, char, compact, double, fsep, hcat, pretty,
                             punctuate, text, (<>))
@@ -30,7 +33,7 @@ oneChar c = case lookup c simpleEscapes of
     mustEscape c = c < ' ' || c == '\x7f' || c > '\xff'
 
 simpleEscapes :: [(Char, String)]
-simpleEscapes = zipWith ch "\b\n\f\r\t\\\"/"
+simpleEscapes = zipWith ch "\b\n\f\r\t\\\"/" "bnfrt\\\"/"
   where
     ch a b = (a, ['\\', b])
 
@@ -66,6 +69,3 @@ renderJValue (JArray a)    = series '[' ']' renderJValue a
 renderJValue (JObject o)   = series '{' '}' field o
   where
     field (name, val) = string name <> text ": " <> renderJValue val
-
-putJValue :: JValue -> IO ()
-putJValue v = putStrLn (renderJValue v)
