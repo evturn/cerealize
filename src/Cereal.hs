@@ -1,45 +1,57 @@
-module Cereal
-    ( JValue(..)
-    , getString
-    , getInt
-    , getDouble
-    , getBool
-    , getObject
-    , getArray
-    , isNull
-    ) where
+module Cereal where
 
-data JValue = JString String
-            | JNumber Double
-            | JBool Bool
-            | JNull
-            | JObject [(String, JValue)]
-            | JArray [JValue]
-            deriving (Eq, Ord, Show)
+data Doc = Empty
+         | Char Char
+         | Text String
+         | Line
+         | Concat Doc Doc
+         | Union Doc Doc
+         deriving (Eq, Show)
 
-getString :: JValue -> Maybe String
-getString (JString s) = Just s
-getString _           = Nothing
+empty :: Doc
+empty = Empty
 
-getInt :: JValue -> Maybe Int
-getInt (JNumber n) = Just (truncate n)
-getInt _           = Nothing
+char :: Char -> Doc
+char c = Char c
 
-getDouble :: JValue -> Maybe Double
-getDouble (JNumber n) = Just n
-getDouble _           = Nothing
+text :: String -> Doc
+text "" = Empty
+text s  = Text s
 
-getBool :: JValue -> Maybe Bool
-getBool (JBool b) = Just b
-getBool _         = Nothing
+double :: Double -> Doc
+double d = text (show d)
 
-getObject :: JValue -> Maybe [(String, JValue)]
-getObject (JObject o) = Just o
-getObject _           = Nothing
+line :: Doc
+line = Line
 
-getArray :: JValue -> Maybe [JValue]
-getArray (JArray a) = Just a
-getArray _          = Nothing
+flatten :: Doc -> Doc
+flatten (x `Concat` y) = flatten x `Concat` flatten y
+flatten Line           = Char ' '
+flatten (x `Union` _)  = flatten x
+flatten other          = other
 
-isNull :: JValue -> Bool
-isNull v = v == JNull
+group :: Doc -> Doc
+group x = flatten x `Union` x
+
+softline :: Doc
+softline = group line
+
+(<>) :: Doc -> Doc -> Doc
+Empty <> y = y
+x <> Empty = x
+x <> y = x `Concat` y
+
+hcat :: [Doc] -> Doc
+hcat = foldr (<>) empty
+
+(</>) :: Doc -> Doc -> Doc
+x </> y = x <> softline <> y
+
+fsep :: [Doc] -> Doc
+fsep = foldr  (</>) empty
+
+punctuate :: Doc -> [Doc] -> [Doc]
+punctuate p []     = []
+punctuate p [d]    = [d]
+punctuate p (d:ds) = (d <> p) : punctuate p ds
+

@@ -1,30 +1,19 @@
-module PrettyJSON where
+module PrettyJSON (renderJValue) where
 
-import           Cereal
+import           Cereal    (Doc, char, compact, double, fsep, hcat, pretty,
+                            punctuate, text, (<>))
+
 import           Data.Bits (shiftR, (.&.))
-import           Data.List (intercalate)
+import           Data.Char (ord)
 import           Numeric   (showHex)
 
-data Doc = ToBeDefined
-  deriving Show
-
-(<>) :: Doc -> Doc -> Doc
-a <> b = undefined
-
-char :: Char -> Doc
-char c = undefined
-
-hcat :: [Doc] -> Doc
-hcat xs = undefined
-
-text :: String -> Doc
-text s = undefined
-
-double :: Double -> Doc
-double n = undefined
-
-fsep :: [Doc] -> Doc
-fsep xs = undefined
+data JValue = JString String
+            | JNumber Double
+            | JBool Bool
+            | JNull
+            | JObject [(String, JValue)]
+            | JArray [JValue]
+            deriving (Eq, Ord, Show)
 
 string :: String -> Doc
 string = enclose '"' '"' . hcat . map oneChar
@@ -67,26 +56,16 @@ hexEscape c | d < 0x10000 = smallHex d
 series :: Char -> Char -> (a -> Doc) -> [a] -> Doc
 series open close x = enclose open close . fsep . punctuate (char ',') . map x
 
-punctuate :: Doc -> [Doc] -> [Doc]
-punctuate p []     = []
-punctuate p [d]    = [d]
-punctuate p (d:ds) = (d <> p) : punctuate p ds
-
 renderJValue :: JValue -> Doc
 renderJValue (JBool True)  = text "true"
 renderJValue (JBool False) = text "false"
 renderJValue JNull         = text "null"
 renderJValue (JNumber n)   = double n
 renderJValue (JString s)   = string s
-renderJValue (JObject o) = "{" ++ pairs o ++ "}"
+renderJValue (JArray a)    = series '[' ']' renderJValue a
+renderJValue (JObject o)   = series '{' '}' field o
   where
-    pairs [] = ""
-    pairs ps = intercalate ", " (map renderPair ps)
-    renderPair (k, v) = show k ++ ": " renderJValue v
-renderJValue (JArray a) = "[" ++ values a ++ "]"
-  where
-    values [] = ""
-    values vs = intercalate ", " (map renderJValue vs)
+    field (name, val) = string name <> text ": " <> renderJValue val
 
 putJValue :: JValue -> IO ()
 putJValue v = putStrLn (renderJValue v)
